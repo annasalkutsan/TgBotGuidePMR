@@ -42,9 +42,11 @@ builder.Services.AddScoped<TelegramBotService>(provider =>
 
 var app = builder.Build();
 
-// Запускаем polling для получения обновлений от Telegram
 using (var scope = app.Services.CreateScope())
 {
+    var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+    await botClient.DeleteWebhookAsync(); // <-- удаляем webhook
+
     var telegramBotService = scope.ServiceProvider.GetRequiredService<TelegramBotService>();
     var cancellationToken = app.Lifetime.ApplicationStopping;
     await telegramBotService.StartPollingAsync(cancellationToken);
