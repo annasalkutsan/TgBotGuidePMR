@@ -1,5 +1,6 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgBotGuide.Application.Interfaces;
 using TgBotGuide.Bot.Interfaces;
@@ -16,16 +17,15 @@ public class MenuService(
 
     private async Task DeleteLastMessageAsync(long chatId)
     {
-        if (_lastMessageIds.ContainsKey(chatId))
+        if (_lastMessageIds.TryGetValue(chatId, out var messageId))
         {
-            var messageId = _lastMessageIds[chatId];
             try
             {
-                await botClient.DeleteMessageAsync(chatId, messageId);
+                await botClient.DeleteMessage(chatId, messageId);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error deleting message: {ex.Message}");
+                Console.WriteLine($"Error deleting message: {ex.Message}, attempt {ex.StackTrace}, inner {ex.InnerException}");
             }
         }
     }
@@ -41,7 +41,7 @@ public class MenuService(
         });
 
         var sentMessage = await botClient.SendTextMessageAsync(chatId,
-            "Привет! Я помогу вам с выбором мест для посещения.",
+            "✨ Привет!\nЯ — ваш бот-гид по достопримечательностям Приднестровья. Помогу выбрать интересные места для прогулок и экскурсий! 🗺️\nВыберите пункт из меню ниже — и начнём путешествие вместе!",
             replyMarkup: inlineKeyboard);
 
         _lastMessageIds[chatId] = sentMessage.MessageId;
@@ -52,13 +52,28 @@ public class MenuService(
         await DeleteLastMessageAsync(chatId);
 
         var infoText =
-            "Этот бот помогает выбрать места для посещения в различных городах. Вы можете выбрать город и получить список интересных мест для посещения.";
+            $"<b>Этот бот поможет вам найти интересные места в Приднестровье!</b> \n\n" +
+            $"📌 С помощью меню с кнопками вы можете:\n" +
+            $"— Просматривать список городов Приднестровья\n" +
+            $"— Просматривать список локаций в этих городах (и их районах)\n" +
+            $"— Узнавать подробную информацию о достопримечательностях\n" +
+            $"⚠️ Если вы заметили неточности (неактуальная ссылка, некорректное описание и т.д.) или что-то не работает — напишите модератору бота:\n" +
+            $"👤 <b>Модератор</b>: @salkutsananna\n" +
+            $"📝 Также вы можете оставить предложение по улучшению бота через <b>Google-форму</b> — <a href=\"https://forms.gle/wdwUVvLEqje1dAhP8\">https://forms.gle/wdwUVvLEqje1dAhP8</a>, ваши идеи просматриваются каждую неделю\n" +
+            $"❤️ Спасибо, что пользуетесь нашим ботом! <b>Желаем вам приятных путешествий по Приднестровью!</b>";
+
         var inlineKeyboard = new InlineKeyboardMarkup(new[]
         {
             new[] { InlineKeyboardButton.WithCallbackData("Назад", "start_menu") }
         });
 
-        var sentMessage = await botClient.SendTextMessageAsync(chatId, infoText, replyMarkup: inlineKeyboard);
+        var sentMessage = await botClient.SendTextMessageAsync(
+            chatId: chatId,
+            text: infoText,
+            replyMarkup: inlineKeyboard,
+            parseMode: ParseMode.Html
+        );
+
         _lastMessageIds[chatId] = sentMessage.MessageId;
     }
 
@@ -95,7 +110,9 @@ public class MenuService(
         }).ToArray();
 
         var sentMessage = await botClient.SendTextMessageAsync(chatId,
-            $"Вы выбрали город {city.Name}. Вот места, которые мы советуем вам посетить:",
+            $"Вы выбрали город {city.Name}.\n" +
+            $"Описание: {city.Description}\n" +
+            $"Вот места, которые мы советуем вам посетить:",
             replyMarkup: inlineKeyboard);
 
         _lastMessageIds[chatId] = sentMessage.MessageId;

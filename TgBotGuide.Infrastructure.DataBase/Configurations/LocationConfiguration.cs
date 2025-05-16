@@ -16,22 +16,19 @@ public class LocationConfiguration: IEntityTypeConfiguration<Location>
 
         builder.Property(l => l.Name)
             .IsRequired()
-            .HasMaxLength(100)
+            .HasMaxLength(1000)
             .HasColumnName("name");
 
         builder.Property(l => l.Description)
-            .HasMaxLength(500)
             .IsRequired(false)
             .HasColumnName("description");
 
         builder.Property(l => l.MapUrl)
             .IsRequired()
-            .HasMaxLength(100)
             .HasColumnName("mapUrl");
 
         builder.Property(l => l.ImageUrl)
             .IsRequired()
-            .HasMaxLength(200)
             .HasColumnName("image_url");
         
         builder.Property(l => l.CityId)

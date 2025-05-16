@@ -16,11 +16,10 @@ public class CityConfiguration: IEntityTypeConfiguration<City>
         
         builder.Property(c => c.Name)
             .IsRequired()
-            .HasMaxLength(100)
+            .HasMaxLength(1000)
             .HasColumnName("name");
         
         builder.Property(c => c.Description)
-            .HasMaxLength(500)
             .IsRequired(false)
             .HasColumnName("description");
         
