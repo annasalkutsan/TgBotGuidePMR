@@ -25,7 +25,8 @@ public class MenuService(
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error deleting message: {ex.Message}, attempt {ex.StackTrace}, inner {ex.InnerException}");
+                Console.WriteLine(
+                    $"Error deleting message: {ex.Message}, attempt {ex.StackTrace}, inner {ex.InnerException}");
             }
         }
     }
@@ -95,6 +96,32 @@ public class MenuService(
         _lastMessageIds[chatId] = sentMessage.MessageId;
     }
 
+    public async Task ShowLocationDetails(Guid locationId, long chatId)
+    {
+        await DeleteLastMessageAsync(chatId);
+        var location = await locationService.GetByIdAsync(locationId, CancellationToken.None);
+
+        var locationDetails =
+            $"<b>Название</b>: {location.Name}\n" +
+            $"<b>Описание</b>: {location.Description}\n" +
+            $"📍<a href=\"{location.MapUrl}\">Открыть на карте</a>";
+
+        var inlineKeyboard = new InlineKeyboardMarkup(new[]
+        {
+            new[] { InlineKeyboardButton.WithCallbackData("Назад", $"city_{location.CityId}") }
+        });
+
+        var sentMessage = await botClient.SendPhotoAsync(
+            chatId,
+            location.ImageUrl,
+            caption: locationDetails,
+            replyMarkup: inlineKeyboard,
+            parseMode: ParseMode.Html
+        );
+
+        _lastMessageIds[chatId] = sentMessage.MessageId;
+    }
+
     public async Task ShowCityDetails(Guid cityId, long chatId)
     {
         var city = await cityService.GetByIdAsync(cityId, CancellationToken.None);
@@ -109,38 +136,21 @@ public class MenuService(
             new[] { InlineKeyboardButton.WithCallbackData("Назад", "choose_city") }
         }).ToArray();
 
-        var sentMessage = await botClient.SendTextMessageAsync(chatId,
-            $"Вы выбрали город {city.Name}.\n" +
-            $"Описание: {city.Description}\n" +
-            $"Вот места, которые мы советуем вам посетить:",
-            replyMarkup: inlineKeyboard);
+        var messageText =
+            $"<b>🏙️ Город: {city.Name}</b>\n" +
+            $"{city.Description}\n" +
+            $"📌 <b>Рекомендуем посетить:</b>";
 
-        _lastMessageIds[chatId] = sentMessage.MessageId;
-    }
-
-    public async Task ShowLocationDetails(Guid locationId, long chatId)
-    {
-        await DeleteLastMessageAsync(chatId);
-        var location = await locationService.GetByIdAsync(locationId, CancellationToken.None);
-
-        var locationDetails = $"Название локации: {location.Name}\n" +
-                              $"Описание: {location.Description}\n" +
-                              $"Ссылка на Google Maps: {location.MapUrl}\n";
-
-        var inlineKeyboard = new InlineKeyboardMarkup(new[]
-        {
-            new[] { InlineKeyboardButton.WithCallbackData("Назад", $"city_{location.CityId}") }
-        });
-
-        var sentMessage = await botClient.SendPhotoAsync(
-            chatId,
-            location.ImageUrl,
-            caption: locationDetails,
-            replyMarkup: inlineKeyboard
+        var sentMessage = await botClient.SendTextMessageAsync(
+            chatId: chatId,
+            text: messageText,
+            replyMarkup: inlineKeyboard,
+            parseMode: ParseMode.Html
         );
 
         _lastMessageIds[chatId] = sentMessage.MessageId;
     }
+
 
     public async Task OnCallbackQueryReceived(CallbackQuery callbackQuery)
     {

@@ -45,7 +45,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
-    await botClient.DeleteWebhookAsync(); // <-- удаляем webhook
+    await botClient.DeleteWebhookAsync();
 
     var telegramBotService = scope.ServiceProvider.GetRequiredService<TelegramBotService>();
     var cancellationToken = app.Lifetime.ApplicationStopping;
